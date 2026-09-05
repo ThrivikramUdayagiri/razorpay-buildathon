@@ -8,7 +8,7 @@ Revox uses AI to classify the failure context but uses deterministic policy cont
 
 It implements two distinct engines:
 - **Engine A: AutoPay Recovery.** Handles recurring subscription failures. Schedules intelligent retries or generates alternate payment links based on AI classification.
-- **Engine B: Checkout Recovery.** Handles one-off failed payments or abandoned carts. Secures checkout sessions using tokenized links, preventing stale cart payments, and never blindly reusing an old payment amount.
+- **Engine B: Checkout Recovery.** Handles one-off failed payments or individual payers. Secures checkout sessions using tokenized links, preventing stale payments, and never blindly reusing an old payment amount.
 
 ## AI Architecture (Gatekeeper Model)
 - **AI decides classification:** The LLM receives the webhook payload and strictly outputs a JSON decision containing Intent, Reason, and Recommended Action.
@@ -18,12 +18,12 @@ It implements two distinct engines:
 ## Safety & Guardrails
 - **Idempotency:** Duplicate webhooks are rejected immediately.
 - **Hard Stops:** Certain events (Mandate Revoked, Already Paid, Session Expired, Max Touchpoints) trigger a strict cessation of recovery.
-- **Stale-cart Validation:** When resuming a checkout, the original cart is re-verified, and a *fresh* order is created.
+- **Stale Validation:** When resuming a checkout, the original transaction is re-verified, and a *fresh* order is created.
 - **Append-Only Audit Ledger:** Every state change is recorded in an immutable hash chain (SHA-256).
 
 ## Demo
 
-To run the local prototype demo:
+To run the local prototype demo (Revox Recovery Simulator):
 
 1. **Install dependencies:**
    ```bash
@@ -39,12 +39,13 @@ To run the local prototype demo:
    ```
 
 3. **Start the server:**
+   *Note: We run without `--reload` and on port 8050 to maintain state stability for the interactive simulator.*
    ```bash
-   uvicorn app.main:app --reload
+   uvicorn app.main:app --host 127.0.0.1 --port 8050
    ```
 
-4. **View the Dashboard:**
-   Open `http://localhost:8000` in your browser.
+4. **View the Simulator:**
+   Open `http://127.0.0.1:8050/demo/` in your browser.
 
 ## Environment Variables
 Copy `.env.example` to `.env`:
