@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="controls">
+    <button id="runDemoBtn" class="btn" onclick="runDemo()">Trigger Demo</button>
+    <button class="btn btn-outline" onclick="verifyAudit()">Verify Audit Chain</button>
+    <button class="btn btn-outline" onclick="window.location.reload()">Refresh Data</button>
+</div>
+
+<h2 class="section-header">Recovery Overview</h2>
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-title">Revenue At Risk</div>
+        <div class="metric-value">₹{{ metrics.revenue_at_risk }}</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-title">Revenue Recovered</div>
+        <div class="metric-value" style="color: var(--success)">₹{{ metrics.revenue_recovered }}</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-title">Recovery Rate</div>
+        <div class="metric-value">{{ metrics.recovery_rate }}%</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-title">Events Processed</div>
+        <div class="metric-value">{{ metrics.total_events_processed }}</div>
+    </div>
+</div>
+
+<h2 class="section-header" style="margin-top: 2rem;">Recent Audit Ledger</h2>
+<div style="overflow-x: auto;">
+    <table class="audit-table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Entity Type</th>
+                <th>Event Type</th>
+                <th>Decision</th>
+                <th>Reason</th>
+                <th>Hash (Truncated)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for audit in audits %}
+            <tr>
+                <td style="font-size: 0.8rem; color: var(--text-muted);">{{ audit.timestamp }}</td>
+                <td>{{ audit.entity_type }}</td>
+                <td><strong>{{ audit.event_type }}</strong></td>
+                <td>
+                    {% if audit.decision %}
+                        <span class="badge {{ audit.decision.lower() }}">{{ audit.decision }}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.85rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ audit.reason }}">
+                    {{ audit.reason or '-' }}
+                </td>
+                <td style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted);" title="{{ audit.record_hash }}">
+                    {{ audit.record_hash[:8] }}...
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No audit events yet. Run the simulation.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

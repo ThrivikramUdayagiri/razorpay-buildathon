@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revox - AI Revenue Recovery</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="brand">Revox <span style="font-weight: 400; font-size: 1rem; opacity: 0.8">| Autonomous Revenue Recovery System</span></div>
+    </header>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        async function runDemo() {
+            const btn = document.getElementById('runDemoBtn');
+            btn.innerText = "Running...";
+            btn.disabled = true;
+            
+            try {
+                // In a real setup, this might trigger a background task
+                // For simplicity, we just reload as the script runs externally 
+                // Or we could have an endpoint /api/simulate/batch
+                alert("Please run `python scripts/run_demo.py` in your terminal to see the simulation, then refresh this page.");
+            } finally {
+                btn.innerText = "Run Simulation";
+                btn.disabled = false;
+            }
+        }
+
+        async function verifyAudit() {
+            const res = await fetch('/audit/verify');
+            const data = await res.json();
+            alert(`Audit Chain Valid: ${data.valid}\nRecords Checked: ${data.records_checked}`);
+        }
+    </script>
+</body>
+</html>

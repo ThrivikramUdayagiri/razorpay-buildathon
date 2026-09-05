@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revox Recovery Simulator</title>
+    <style>
+        :root {
+            --gray: #e2e8f0;
+            --yellow: #fef08a;
+            --green: #bbf7d0;
+            --red: #fecaca;
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --text: #f8fafc;
+        }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: var(--panel);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #38bdf8;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: #0f172a;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+        .slider-container label {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        input[type="range"] {
+            width: 200px;
+        }
+        .prob-value {
+            font-weight: bold;
+            color: #38bdf8;
+            min-width: 40px;
+            text-align: right;
+        }
+        .main-container {
+            display: flex;
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .panel {
+            flex: 1;
+            background-color: var(--panel);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+        }
+        .panel h2 {
+            margin-top: 0;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        .user-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .user-card {
+            background-color: #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 6px solid;
+            transition: all 0.3s ease;
+        }
+        .user-card.state-gray { border-color: var(--gray); }
+        .user-card.state-yellow { border-color: var(--yellow); }
+        .user-card.state-green { border-color: var(--green); }
+        .user-card.state-red { border-color: var(--red); }
+        
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .user-name { font-weight: bold; font-size: 1.1rem; }
+        .user-amount { color: #94a3b8; font-size: 0.9rem; }
+        .user-status { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: bold; }
+        
+        .state-gray .user-status { color: #94a3b8; }
+        .state-yellow .user-status { color: #fde047; }
+        .state-green .user-status { color: #4ade80; }
+        .state-red .user-status { color: #f87171; }
+
+        .actions {
+            display: none;
+            gap: 0.5rem;
+        }
+        .user-card.state-yellow .actions {
+            display: flex;
+        }
+        
+        button {
+            background: #0f172a;
+            color: white;
+            border: 1px solid #475569;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #1e293b;
+            border-color: #94a3b8;
+        }
+        .btn-pay { color: #4ade80; border-color: #166534; }
+        .btn-pay:hover { background: #14532d; }
+        
+        .btn-decline { color: #f87171; border-color: #991b1b; }
+        .btn-decline:hover { background: #7f1d1d; }
+
+        .btn-reset {
+            background: #334155;
+            margin-left: 1rem;
+        }
+        .btn-reset:hover { background: #475569; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Revox Recovery Simulator</h1>
+        
+        <div style="display: flex; align-items: center;">
+            <div class="slider-container">
+                <label for="prob-slider">Recovery Probability:</label>
+                <input type="range" id="prob-slider" min="0" max="100" value="50">
+                <div class="prob-value"><span id="prob-display">50</span>%</div>
+            </div>
+            <button class="btn-reset" onclick="resetDemo()">Reset Demo</button>
+            <a href="/audit" style="color: #94a3b8; margin-left: 1rem; text-decoration: none;">View Audit Ledger &rarr;</a>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="panel">
+            <h2>Engine A: AutoPay <span>10 Users</span></h2>
+            <div class="user-grid" id="autopay-grid">
+                <!-- AutoPay users injected here -->
+            </div>
+        </div>
+        
+        <div class="panel">
+            <h2>Manual Recovery (Individual Payer) <span>10 Users</span></h2>
+            <div class="user-grid" id="checkout-grid">
+                <!-- Checkout users injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const slider = document.getElementById('prob-slider');
+        const display = document.getElementById('prob-display');
+        let pollingInterval = null;
+
+        // Slider interaction
+        slider.addEventListener('input', (e) => {
+            display.textContent = e.target.value;
+        });
+
+        slider.addEventListener('change', async (e) => {
+            await fetch('/demo/api/set-probability', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ probability: parseInt(e.target.value) })
+            });
+        });
+
+        function getStatusText(state, type, retries) {
+            if (state === 'gray') {
+                if (type === 'autopay') return `System Retrying... (${retries}/3)`;
+                return `Waiting for Bank Server...`;
+            }
+            if (state === 'yellow') {
+                if (type === 'autopay') return 'Manual Action Required';
+                return 'Link Sent - Action Required';
+            }
+            if (state === 'green') return 'Payment Successful';
+            if (state === 'red') {
+                return type === 'autopay' ? 'Failed / AutoPay Disabled' : 'Payment Failed';
+            }
+            return state;
+        }
+
+        function createUserCard(user) {
+            const card = document.createElement('div');
+            card.className = `user-card state-${user.color_state}`;
+            
+            const info = document.createElement('div');
+            info.className = 'user-info';
+            info.innerHTML = `
+                <div class="user-name">${user.name}</div>
+                <div class="user-amount">₹${user.amount.toFixed(2)}</div>
+                <div class="user-status">${getStatusText(user.color_state, user.engine_type, user.retry_count)}</div>
+            `;
+            
+            const actions = document.createElement('div');
+            actions.className = 'actions';
+            
+            const payBtn = document.createElement('button');
+            payBtn.className = 'btn-pay';
+            payBtn.textContent = user.engine_type === 'autopay' ? 'Pay Alternate Method' : 'Pay via Link';
+            payBtn.onclick = () => sendAction(user.id, 'pay');
+            
+            const declineBtn = document.createElement('button');
+            declineBtn.className = 'btn-decline';
+            declineBtn.textContent = user.engine_type === 'autopay' ? 'Cancel AutoPay' : 'Decline';
+            declineBtn.onclick = () => sendAction(user.id, 'decline');
+            
+            actions.appendChild(payBtn);
+            actions.appendChild(declineBtn);
+            
+            card.appendChild(info);
+            card.appendChild(actions);
+            
+            return card;
+        }
+
+        async function fetchState() {
+            try {
+                const res = await fetch('/demo/api/state');
+                const data = await res.json();
+                
+                // Update slider only if it's out of sync and not actively being dragged
+                if (document.activeElement !== slider && slider.value != data.global_probability) {
+                    slider.value = data.global_probability;
+                    display.textContent = data.global_probability;
+                }
+
+                const autoGrid = document.getElementById('autopay-grid');
+                const checkGrid = document.getElementById('checkout-grid');
+                
+                autoGrid.innerHTML = '';
+                checkGrid.innerHTML = '';
+                
+                data.autopay_users.forEach(u => autoGrid.appendChild(createUserCard(u)));
+                data.checkout_users.forEach(u => checkGrid.appendChild(createUserCard(u)));
+                
+            } catch (err) {
+                console.error("Error fetching state:", err);
+            }
+        }
+
+        async function sendAction(userId, action) {
+            await fetch('/demo/api/user-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, action: action })
+            });
+            fetchState(); // instant refresh
+        }
+
+        async function resetDemo() {
+            await fetch('/demo/api/reset', { method: 'POST' });
+            fetchState();
+        }
+
+        // Start polling
+        fetchState();
+        pollingInterval = setInterval(fetchState, 1000);
+
+    </script>
+</body>
+</html>
